@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>大文件上传</title>
+        <link rel="stylesheet" href="./css/index.css" />
+    </head>
+    <body>
+        <div class="upload-card">
+            <div class="upload-header">
+                <div>
+                    <div class="upload-title">大文件上传</div>
+                    <div class="upload-subtitle">支持分片上传，适合较大的视频或压缩包</div>
+                </div>
+                <div class="badge">本地演示</div>
+            </div>
+
+            <label id="dropArea" class="drop-area">
+                <div class="drop-icon">⬆</div>
+                <div class="drop-title">点击选择文件或拖拽到这里</div>
+                <div class="drop-hint">建议单个文件不超过数 GB，当前示例为本地上传</div>
+                <input id="file" type="file" />
+            </label>
+
+            <div class="file-info" id="fileInfo" style="display: none">
+                <span id="fileName"></span>
+                <span class="file-size" id="fileSize"></span>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-secondary" id="resetBtn" type="button">清空</button>
+                <button class="btn btn-primary" id="uploadBtn" type="button" disabled>
+                    <span id="uploadBtnText">开始上传</span>
+                </button>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>上传进度</span>
+                    <span id="percentLabel">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-inner" id="progressInner"></div>
+                </div>
+            </div>
+
+            <div class="status" id="statusText"></div>
+        </div>
+
+        <script>
+            const fileInput = document.getElementById('file')
+            const dropArea = document.getElementById('dropArea')
+            const uploadBtn = document.getElementById('uploadBtn')
+            const uploadBtnText = document.getElementById('uploadBtnText')
+            const resetBtn = document.getElementById('resetBtn')
+            const fileInfo = document.getElementById('fileInfo')
+            const fileNameEl = document.getElementById('fileName')
+            const fileSizeEl = document.getElementById('fileSize')
+            const progressInner = document.getElementById('progressInner')
+            const percentLabel = document.getElementById('percentLabel')
+            const statusText = document.getElementById('statusText')
+
+            let currentFile = null
+            let isUploading = false
+
+            const formatSize = size => {
+                if (size >= 1024 * 1024 * 1024) {
+                    return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+                }
+                if (size >= 1024 * 1024) {
+                    return (size / (1024 * 1024)).toFixed(2) + ' MB'
+                }
+                if (size >= 1024) {
+                    return (size / 1024).toFixed(1) + ' KB'
+                }
+                return size + ' B'
+            }
+
+            const setStatus = (msg, type) => {
+                statusText.textContent = msg || ''
+                statusText.classList.remove('success', 'error')
+                if (type) statusText.classList.add(type)
+            }
+
+            const setProgress = percent => {
+                const safe = Math.min(100, Math.max(0, percent))
+                progressInner.style.width = safe + '%'
+                percentLabel.textContent = safe.toFixed(0) + '%'
+            }
+
+            const handleFileSelected = file => {
+                if (!file) return
+                currentFile = file
+                fileInfo.style.display = 'flex'
+                fileNameEl.textContent = file.name
+                fileSizeEl.textContent = formatSize(file.size)
+                uploadBtn.disabled = false
+                setProgress(0)
+                setStatus('已选择文件，点击“开始上传”进行分片上传。')
+            }
+
+            // 选择文件
+            fileInput.addEventListener('change', event => {
+                const file = event.target.files[0]
+                handleFileSelected(file)
+            })
+
+            // 拖拽支持
+            ;['dragenter', 'dragover'].forEach(type => {
+                dropArea.addEventListener(type, e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    dropArea.classList.add('dragover')
+                })
+            })
+            ;['dragleave', 'drop'].forEach(type => {
+                dropArea.addEventListener(type, e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    dropArea.classList.remove('dragover')
+                })
+            })
+
+            dropArea.addEventListener('drop', e => {
+                const file = e.dataTransfer.files && e.dataTransfer.files[0]
+                if (file) {
+                    fileInput.files = e.dataTransfer.files
+                    handleFileSelected(file)
+                }
+            })
+
+            const chunkFun = (file, size = 1024 * 1024 * 4) => {
+                const chunks = []
+                for (let i = 0; i < file.size; i += size) {
+                    chunks.push(file.slice(i, i + size))
+                }
+                return chunks
+            }
+
+            const uploadFile = async file => {
+                const chunks = chunkFun(file)
+                const total = chunks.length
+                const list = []
+
+                for (let i = 0; i < total; i++) {
+                    const formData = new FormData()
+                    formData.append('index', i)
+                    formData.append('total', total)
+                    formData.append('fileName', 'xiezhen')
+                    formData.append('file', chunks[i])
+
+                    const p = fetch('http://127.0.0.1:3000/up', {
+                        method: 'POST',
+                        body: formData
+                    }).then(res => {
+                        if (!res.ok) {
+                            throw new Error('切片上传失败，状态码：' + res.status)
+                        }
+                        const percent = ((i + 1) / total) * 100
+                        setProgress(percent)
+                        return res.text()
+                    })
+
+                    list.push(p)
+                }
+
+                await Promise.all(list)
+
+                const mergeRes = await fetch('http://127.0.0.1:3000/merge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fileName: '媚女'
+                    })
+                })
+
+                if (!mergeRes.ok) {
+                    throw new Error('合并失败，状态码：' + mergeRes.status)
+                }
+
+                return mergeRes.text()
+            }
+
+            uploadBtn.addEventListener('click', async () => {
+                if (!currentFile || isUploading) return
+                isUploading = true
+                uploadBtn.disabled = true
+                resetBtn.disabled = true
+                uploadBtnText.textContent = '上传中...'
+                setStatus('正在上传并合并文件，稍等片刻...', null)
+                setProgress(0)
+
+                try {
+                    await uploadFile(currentFile)
+                    setProgress(100)
+                    setStatus('上传并合并完成，可以在服务端 video 目录查看生成的文件。', 'success')
+                } catch (err) {
+                    console.error(err)
+                    setStatus('上传过程中出现错误：' + err.message, 'error')
+                } finally {
+                    isUploading = false
+                    uploadBtn.disabled = !currentFile
+                    resetBtn.disabled = false
+                    uploadBtnText.textContent = '开始上传'
+                }
+            })
+
+            resetBtn.addEventListener('click', () => {
+                if (isUploading) return
+                currentFile = null
+                fileInput.value = ''
+                fileInfo.style.display = 'none'
+                fileNameEl.textContent = ''
+                fileSizeEl.textContent = ''
+                setProgress(0)
+                setStatus('')
+                uploadBtn.disabled = true
+            })
+        </script>
+    </body>
+</html>

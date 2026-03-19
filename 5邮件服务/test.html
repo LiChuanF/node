@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件发送测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📧 邮件发送测试</h1>
+        <form id="mailForm">
+            <div class="form-group">
+                <label for="to">收件人邮箱 *</label>
+                <input type="email" id="to" required placeholder="example@qq.com">
+            </div>
+            <div class="form-group">
+                <label for="subject">邮件主题 *</label>
+                <input type="text" id="subject" required placeholder="测试邮件">
+            </div>
+            <div class="form-group">
+                <label for="text">邮件内容 *</label>
+                <textarea id="text" required placeholder="这是一封测试邮件"></textarea>
+            </div>
+            <button type="submit">发送邮件</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('mailForm')
+        const messageDiv = document.getElementById('message')
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault()
+
+            const data = {
+                to: document.getElementById('to').value,
+                subject: document.getElementById('subject').value,
+                text: document.getElementById('text').value
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/send-mail', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+
+                const result = await response.json()
+
+                if (response.ok) {
+                    showMessage('✅ ' + result.message, 'success')
+                    form.reset()
+                } else {
+                    showMessage('❌ ' + result.error, 'error')
+                }
+            } catch (error) {
+                showMessage('❌ 请求失败: ' + error.message, 'error')
+            }
+        })
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text
+            messageDiv.className = 'message ' + type
+            messageDiv.style.display = 'block'
+            setTimeout(() => {
+                messageDiv.style.display = 'none'
+            }, 5000)
+        }
+    </script>
+</body>
+
+</html>

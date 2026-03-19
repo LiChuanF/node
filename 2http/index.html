@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代理演示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .result {
+            background: #f4f4f4;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>代理演示</h1>
+    <p>点击按钮测试代理效果：</p>
+
+    <button onclick="testProxy()">通过代理访问 /api</button>
+    <button onclick="testDirect()">直接访问 /realapi</button>
+
+    <div id="result"></div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+
+        async function testProxy() {
+            try {
+                const res = await fetch('/api');
+                const data = await res.json();
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3>✅ 通过代理访问 /api</h3>
+                        <p><strong>请求路径：</strong>/api</p>
+                        <p><strong>实际访问：</strong>/realapi (被代理重写)</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="result">❌ 错误: ${err.message}</div>`;
+            }
+        }
+
+        async function testDirect() {
+            try {
+                const res = await fetch('/realapi');
+                const data = await res.json();
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3>✅ 直接访问 /realapi</h3>
+                        <p><strong>请求路径：</strong>/realapi</p>
+                        <p><strong>说明：</strong>没有经过代理</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="result">❌ 错误: ${err.message}</div>`;
+            }
+        }
+
+        // 页面加载时自动测试
+        testProxy();
+    </script>
+</body>
+
+</html>

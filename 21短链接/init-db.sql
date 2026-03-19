@@ -1,0 +1,12 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS short_line;
+
+-- 使用数据库
+USE short_line;
+
+-- 创建短链接表
+CREATE TABLE IF NOT EXISTS short (
+    id VARCHAR(255) PRIMARY KEY COMMENT '短码ID',
+    url TEXT NOT NULL COMMENT '原始URL',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短链接映射表';

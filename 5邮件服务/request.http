@@ -1,0 +1,37 @@
+### 使用离职通知模板（推荐）
+POST http://localhost:3000/api/send-mail HTTP/1.1
+Content-Type: application/json
+
+{
+    "to": "815450917@163.com",
+    "subject": "劳动关系解除通知",
+    "template": "dismissal",
+    "name": "迪迦奥特曼",
+    "dismissalDate": "2026年2月1日",
+    "handoverDate": "2026年1月31日",
+    "company": "北京融智云创",
+    "department": "研发部",
+    "manager": "李部长",
+    "phone": "110",
+    "date": "20260120"
+}
+
+# ### 发送离职通知邮件（直接文本）
+# POST http://localhost:3000/api/send-mail HTTP/1.1
+# Content-Type: application/json
+
+# {
+#     "to": "583557278@qq.com",
+#     "subject": "劳动关系解除通知",
+#     "text": "尊敬的【杨世刚】：\n\n您好。\n\n感谢您在任职期间为公司所付出的努力与贡献。经过公司综合评估并慎重讨论，我们很遗憾地通知您：公司决定自【解除日期】起，与您解除劳动关系。\n\n该决定是基于公司当前的业务调整及岗位需求变化作出的，与您个人品质无关。公司将严格依据相关法律法规及劳动合同约定，妥善处理薪资结算、未休年假、社会保险及其他相关事宜。\n\n请您于【交接日期】前完成工作交接，并与人力资源部联系办理离职手续。\n\n如您对本通知或相关安排有任何疑问，欢迎随时与我们沟通。\n\n再次感谢您在公司期间的付出，祝愿您在未来的职业发展中一切顺利。\n\n此致\n敬礼\n\n【北京融智云创】\n【研发部】\n【李部长】\n【110】\n【20260120】"
+# }
+
+# ### 测试普通邮件
+# POST http://localhost:3000/api/send-mail HTTP/1.1
+# Content-Type: application/json
+
+# {
+#     "to": "583557278@qq.com",
+#     "subject": "测试邮件",
+#     "text": "这是一封测试邮件"
+# }

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE 测试 - 李白诗词</title>
+    <style>
+        body {
+            font-family: 'KaiTi', '楷体', serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        #poem {
+            font-size: 20px;
+            line-height: 2;
+            white-space: pre-wrap;
+            color: #333;
+            min-height: 200px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 30px;
+            font-size: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>梦游天姥吟留别 - 李白</h1>
+        <div id="poem"></div>
+        <div class="controls">
+            <button id="startBtn" onclick="startSSE()">开始</button>
+            <button id="stopBtn" onclick="stopSSE()" disabled>停止</button>
+            <button onclick="clearPoem()">清空</button>
+        </div>
+        <div class="status" id="status">点击"开始"按钮接收诗句</div>
+    </div>
+
+    <script>
+
+        fetch('http://localhost:3000/list/getList', {
+            method: 'POST',
+        })
+            .then(res => res.json())
+            .then(data => console.log(data))
+
+        let eventSource = null
+        const poemDiv = document.getElementById('poem')
+        const statusDiv = document.getElementById('status')
+        const startBtn = document.getElementById('startBtn')
+        const stopBtn = document.getElementById('stopBtn')
+
+        function startSSE() {
+            if (eventSource) {
+                eventSource.close()
+            }
+
+            poemDiv.textContent = ''
+            statusDiv.textContent = '正在连接...'
+            startBtn.disabled = true
+            stopBtn.disabled = false
+
+            // 连接 SSE
+            eventSource = new EventSource('http://localhost:3000/sse/see')
+
+            // 监听 poem 事件（每个字）  自定义事件名  不写也可以,默认事件名为 message
+            eventSource.addEventListener('poem', (e) => {
+                poemDiv.textContent += e.data
+                statusDiv.textContent = '正在接收诗句...'
+            })
+
+            // 监听 end 事件（结束）
+            eventSource.addEventListener('end', (e) => {
+                statusDiv.textContent = e.data
+                eventSource.close()
+                startBtn.disabled = false
+                stopBtn.disabled = true
+            })
+
+            // 监听连接打开
+            eventSource.onopen = () => {
+                statusDiv.textContent = '连接成功，开始接收诗句...'
+            }
+
+            // 监听错误
+            eventSource.onerror = (err) => {
+                console.error('SSE 错误:', err)
+                statusDiv.textContent = '连接失败，请检查服务器是否运行'
+                startBtn.disabled = false
+                stopBtn.disabled = true
+                eventSource.close()
+            }
+        }
+
+        function stopSSE() {
+            if (eventSource) {
+                eventSource.close()
+                statusDiv.textContent = '已停止'
+                startBtn.disabled = false
+                stopBtn.disabled = true
+            }
+        }
+
+        function clearPoem() {
+            poemDiv.textContent = ''
+            statusDiv.textContent = '已清空'
+        }
+    </script>
+</body>
+
+</html>

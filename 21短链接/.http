@@ -1,0 +1,10 @@
+### 变量定义
+@url = http://localhost:3000
+
+### 创建短码
+POST {{url}}/create_url HTTP/1.1
+content-type: application/json
+
+{
+  "url": "https://juejin.cn/post/7560510073950011435"
+}

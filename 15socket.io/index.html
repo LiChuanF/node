@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Socket.IO Chat</title>
+        <style>
+            :root {
+                --bg: #0b1220;
+                --panel: rgba(255, 255, 255, 0.06);
+                --panel-2: rgba(255, 255, 255, 0.08);
+                --border: rgba(255, 255, 255, 0.1);
+                --text: rgba(255, 255, 255, 0.92);
+                --muted: rgba(255, 255, 255, 0.64);
+                --accent: #7c3aed;
+                --accent-2: #22c55e;
+                --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+                --radius: 16px;
+            }
+
+            html,
+            body,
+            .room {
+                height: 100%;
+                width: 100%;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            *::selection {
+                background: rgba(124, 58, 237, 0.35);
+            }
+
+            body {
+                margin: 0;
+                color: var(--text);
+                font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+                    'Apple Color Emoji', 'Segoe UI Emoji';
+                background: radial-gradient(1200px 600px at 10% 10%, rgba(124, 58, 237, 0.22), transparent 60%),
+                    radial-gradient(900px 520px at 90% 20%, rgba(34, 197, 94, 0.16), transparent 55%),
+                    linear-gradient(180deg, #070b14, var(--bg));
+            }
+
+            .room {
+                display: flex;
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .left {
+                width: 320px;
+                min-width: 280px;
+                max-width: 360px;
+                border: 1px solid var(--border);
+                background: rgba(255, 255, 255, 0.04);
+                backdrop-filter: blur(10px);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .right {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                border: 1px solid var(--border);
+                background: rgba(255, 255, 255, 0.04);
+                backdrop-filter: blur(10px);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                overflow: hidden;
+            }
+
+            .header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 16px;
+                background: linear-gradient(135deg, rgba(124, 58, 237, 0.55), rgba(34, 197, 94, 0.25));
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            .headerLeft {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .mobileMenuBtn {
+                display: none;
+                width: 34px;
+                height: 34px;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(0, 0, 0, 0.18);
+                color: rgba(255, 255, 255, 0.9);
+                cursor: pointer;
+            }
+
+            .header .title {
+                font-weight: 700;
+                letter-spacing: 0.2px;
+            }
+
+            .header .meta {
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.78);
+            }
+
+            .statusPill {
+                font-size: 12px;
+                padding: 6px 10px;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(0, 0, 0, 0.18);
+                color: rgba(255, 255, 255, 0.86);
+                max-width: 52ch;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .main {
+                flex: 1;
+                padding: 16px;
+                overflow: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                scroll-behavior: smooth;
+            }
+
+            .main::-webkit-scrollbar,
+            .groupList::-webkit-scrollbar,
+            .footer .ipt::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
+            }
+            .main::-webkit-scrollbar-thumb,
+            .groupList::-webkit-scrollbar-thumb,
+            .footer .ipt::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.14);
+                border: 2px solid transparent;
+                background-clip: padding-box;
+                border-radius: 999px;
+            }
+            .main::-webkit-scrollbar-track,
+            .groupList::-webkit-scrollbar-track,
+            .footer .ipt::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .msg {
+                display: flex;
+                gap: 10px;
+                align-items: flex-end;
+                max-width: 920px;
+            }
+
+            .msg.mine {
+                align-self: flex-end;
+                flex-direction: row-reverse;
+            }
+
+            .avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                display: grid;
+                place-items: center;
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.85);
+            }
+
+            .bubble {
+                padding: 10px 12px;
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.06);
+                line-height: 1.4;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+            .msg.mine .bubble {
+                background: rgba(124, 58, 237, 0.22);
+                border-color: rgba(124, 58, 237, 0.35);
+            }
+
+            .sys {
+                align-self: center;
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.72);
+                padding: 8px 12px;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                background: rgba(0, 0, 0, 0.18);
+                max-width: min(720px, 92%);
+                text-align: center;
+            }
+
+            .userline {
+                display: flex;
+                gap: 8px;
+                align-items: baseline;
+                margin-bottom: 6px;
+            }
+
+            .user {
+                font-size: 12px;
+                font-weight: 700;
+                color: rgba(255, 255, 255, 0.85);
+            }
+
+            .time {
+                font-size: 11px;
+                color: var(--muted);
+            }
+
+            .footer {
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 12px;
+                background: rgba(255, 255, 255, 0.03);
+            }
+
+            .composer {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 10px;
+                align-items: end;
+            }
+
+            .footer .ipt {
+                width: 100%;
+                min-height: 56px;
+                max-height: 180px;
+                overflow: auto;
+                color: rgba(255, 255, 255, 0.92);
+                outline: none;
+                font-size: 14px;
+                padding: 12px 12px;
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(0, 0, 0, 0.22);
+            }
+
+            .footer .ipt:empty:before {
+                content: 'Enter 发送，Shift+Enter 换行…';
+                color: rgba(255, 255, 255, 0.42);
+            }
+
+            .sendBtn {
+                height: 56px;
+                padding: 0 14px;
+                border-radius: 14px;
+                border: 1px solid rgba(124, 58, 237, 0.35);
+                background: rgba(124, 58, 237, 0.22);
+                color: rgba(255, 255, 255, 0.92);
+                font-weight: 700;
+                letter-spacing: 0.2px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .sendBtn:hover {
+                background: rgba(124, 58, 237, 0.28);
+            }
+            .sendBtn:active {
+                transform: translateY(1px);
+            }
+            .sendBtn[disabled] {
+                opacity: 0.55;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .sideHeader {
+                padding: 14px 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .sideHeader .label {
+                font-weight: 700;
+                letter-spacing: 0.2px;
+            }
+
+            .sideHeader .hint {
+                font-size: 12px;
+                color: var(--muted);
+            }
+
+            .groupList {
+                overflow: auto;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .groupList-items {
+                padding: 12px;
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.06);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .groupList-items.active {
+                border-color: rgba(124, 58, 237, 0.35);
+                background: rgba(124, 58, 237, 0.14);
+            }
+
+            .groupList-items .roomName {
+                font-weight: 700;
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+            .groupList-items .count {
+                font-size: 12px;
+                padding: 6px 10px;
+                border-radius: 999px;
+                border: 1px solid rgba(34, 197, 94, 0.35);
+                background: rgba(34, 197, 94, 0.14);
+                color: rgba(255, 255, 255, 0.86);
+            }
+
+            .empty {
+                padding: 10px 12px;
+                border-radius: 14px;
+                border: 1px dashed rgba(255, 255, 255, 0.18);
+                color: var(--muted);
+                background: rgba(255, 255, 255, 0.03);
+                font-size: 13px;
+            }
+
+            @media (max-width: 900px) {
+                .room {
+                    padding: 12px;
+                }
+                .mobileMenuBtn {
+                    display: inline-grid;
+                    place-items: center;
+                }
+                .left {
+                    display: none;
+                    position: fixed;
+                    z-index: 30;
+                    inset: 12px 12px auto 12px;
+                    height: calc(100dvh - 24px);
+                    width: calc(100% - 24px);
+                    max-width: none;
+                }
+                body.sidebarOpen .left {
+                    display: flex;
+                }
+                body.sidebarOpen .backdrop {
+                    display: block;
+                }
+            }
+
+            .backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 20;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="backdrop" id="backdrop"></div>
+        <div class="room">
+            <aside class="left">
+                <div class="sideHeader">
+                    <div class="label">房间列表</div>
+                    <div class="hint">实时在线</div>
+                </div>
+                <div class="groupList">
+                    <div class="empty">等待连接后同步房间信息…</div>
+                </div>
+            </aside>
+            <section class="right">
+                <header class="header">
+                    <div class="headerLeft">
+                        <button class="mobileMenuBtn" id="menuBtn" aria-label="打开房间列表">☰</button>
+                        <div>
+                            <div class="title">聊天室</div>
+                            <div class="meta" id="meta"></div>
+                        </div>
+                    </div>
+                    <div class="statusPill" id="status">未连接</div>
+                </header>
+                <main class="main"></main>
+                <footer class="footer">
+                    <div class="composer">
+                        <div class="ipt" contenteditable spellcheck="false"></div>
+                        <button class="sendBtn" id="sendBtn" type="button">发送</button>
+                    </div>
+                </footer>
+            </section>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+        <script type="module">
+            const $groupEl = $('.groupList')
+            const $main = $('.main')
+            const $ipt = $('.ipt')
+            const $sendBtn = $('#sendBtn')
+            const $statusEl = $('#status')
+            const $metaEl = $('#meta')
+            const $menuBtn = $('#menuBtn')
+            const $backdrop = $('#backdrop')
+            import { io } from 'https://cdn.socket.io/4.7.4/socket.io.esm.min.js'
+            const name = prompt('请输入你的名字')
+            const room = prompt('请输入房间号')
+            $metaEl.text(`用户：${name || '-'}  ·  房间：${room || '-'}`)
+
+            const isSystem = message => (message?.user || '').trim() === '管理员'
+
+            const sendSystem = text => {
+                const $sys = $('<div class="sys"></div>').text(text)
+                $main.append($sys)
+                $main.scrollTop($main[0].scrollHeight)
+            }
+
+            const sendMessage = message => {
+                if (isSystem(message)) {
+                    sendSystem(message.text ?? '')
+                    return
+                }
+
+                const mine = message.user === name
+                const label = (message.user || '?').trim().slice(0, 2).toUpperCase() || '?'
+                const timeText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+                const $wrap = $(`<div class="msg${mine ? ' mine' : ''}"></div>`)
+                const $avatar = $('<div class="avatar"></div>').text(label)
+                const $bubble = $('<div class="bubble"></div>')
+
+                const $userline = $('<div class="userline"></div>')
+                const $user = $('<div class="user"></div>').text(message.user || '匿名')
+                const $time = $('<div class="time"></div>').text(timeText)
+                $userline.append($user, $time)
+
+                const $text = $('<div></div>').text(message.text ?? '')
+                $bubble.append($userline, $text)
+
+                $wrap.append($avatar, $bubble)
+                $main.append($wrap)
+                $main.scrollTop($main[0].scrollHeight)
+            }
+
+            const socket = io('http://localhost:3000')
+
+            const setStatus = (text, kind = 'neutral') => {
+                $statusEl.text(text)
+                const map = {
+                    neutral: 'rgba(255,255,255,0.16)',
+                    ok: 'rgba(34, 197, 94, 0.35)',
+                    warn: 'rgba(245, 158, 11, 0.35)',
+                    err: 'rgba(239, 68, 68, 0.35)'
+                }
+                $statusEl.css('border-color', map[kind] || map.neutral)
+            }
+
+            const updateSendBtn = () => {
+                const text = $ipt.text().trim()
+                $sendBtn.prop('disabled', !text)
+            }
+
+            const doSend = () => {
+                const text = $ipt.text().trim()
+                if (!text) return
+                socket.emit('message', { text, room, user: name })
+                sendMessage({ text, user: name })
+                $ipt.text('')
+                updateSendBtn()
+                $ipt.trigger('focus')
+            }
+
+            // 只在输入框聚焦时处理 Enter 发送
+            $ipt.on('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    doSend()
+                }
+            })
+
+            // 粘贴时转纯文本，避免带入奇怪的 HTML
+            $ipt.on('paste', e => {
+                e.preventDefault()
+                const text = e.originalEvent?.clipboardData?.getData('text/plain') || ''
+                document.execCommand('insertText', false, text)
+                updateSendBtn()
+            })
+
+            $ipt.on('input', updateSendBtn)
+            $sendBtn.on('click', doSend)
+            updateSendBtn()
+
+            // 移动端侧边栏开关
+            const openSidebar = () => $('body').addClass('sidebarOpen')
+            const closeSidebar = () => $('body').removeClass('sidebarOpen')
+            $menuBtn.on('click', () => {
+                if ($('body').hasClass('sidebarOpen')) closeSidebar()
+                else openSidebar()
+            })
+            $backdrop.on('click', closeSidebar)
+
+            //连接成功socket
+            socket.on('connect', () => {
+                setStatus('已连接', 'ok')
+                socket.emit('join', { name, room }) //加入一个房间
+                socket.on('message', message => {
+                    sendMessage(message)
+                })
+                socket.on('groupList', groupList => {
+                    console.log(groupList)
+                    $groupEl.empty()
+                    Object.keys(groupList).forEach(key => {
+                        const $item = $('<div class="groupList-items"></div>')
+                        if (String(key) === String(room)) $item.addClass('active')
+                        const $roomName = $('<div class="roomName"></div>').text(key)
+                        const $count = $('<div class="count"></div>').text(`${groupList[key].length} 人`)
+                        $item.append($roomName, $count)
+                        $groupEl.append($item)
+                    })
+                    if (!Object.keys(groupList).length) {
+                        $groupEl.append($('<div class="empty"></div>').text('暂无房间信息'))
+                    }
+                })
+            })
+
+            socket.on('connect_error', err => {
+                setStatus(`连接失败：${err?.message || err}`, 'err')
+            })
+            socket.on('disconnect', () => {
+                setStatus('已断开', 'warn')
+            })
+
+            // 初始聚焦输入
+            setTimeout(() => $ipt.trigger('focus'), 0)
+        </script>
+    </body>
+</html>

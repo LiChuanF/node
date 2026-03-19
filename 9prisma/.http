@@ -1,0 +1,194 @@
+### 变量定义
+@baseUrl = http://localhost:3000
+@userId = 1
+@postId = 1
+
+### ========== User 接口测试 ==========
+
+### 创建用户
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "name": "测试用户"
+}
+
+### 创建第二个用户
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "email": "alice@example.com",
+    "name": "Alice"
+}
+
+### 获取所有用户
+GET {{baseUrl}}/users
+
+### 获取单个用户
+GET {{baseUrl}}/users/{{userId}}
+
+### 更新用户
+PUT {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+
+{
+    "email": "updated@example.com",
+    "name": "更新后的用户名"
+}
+
+### 删除用户（注意：如果有关联文章会失败）
+DELETE {{baseUrl}}/users/{{userId}}
+
+
+
+
+### ========== Post 接口测试 ==========
+
+
+
+
+### 创建文章（草稿）
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+    "title": "我的第二篇文章",
+    "content": "这是文章的内容，可以很长很长...",
+    "authorId": 1,
+    "published": false
+}
+
+### 创建文章（已发布）
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+    "title": "已发布的文章",
+    "content": "这篇文章已经发布了",
+    "authorId": 1,
+    "published": true
+}
+
+### 创建文章（不指定 published，默认为 false）
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+    "title": "默认草稿文章",
+    "content": "没有指定 published 字段",
+    "authorId": 1
+}
+
+### 获取所有文章
+GET {{baseUrl}}/posts
+
+### 获取单个文章
+GET {{baseUrl}}/posts/{{postId}}
+
+### 更新文章
+PUT {{baseUrl}}/posts/{{postId}}
+Content-Type: application/json
+
+{
+    "title": "更新后的标题",
+    "content": "更新后的内容",
+    "published": true
+}
+
+### 发布文章
+PUT {{baseUrl}}/posts/{{postId}}
+Content-Type: application/json
+
+{
+    "published": true
+}
+
+### 删除文章
+DELETE {{baseUrl}}/posts/{{postId}}
+
+### ========== 综合测试场景 ==========
+
+### 场景1：创建用户并为其创建文章
+# 1. 先创建用户
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "email": "author@example.com",
+    "name": "作者"
+}
+
+###
+# 2. 使用返回的用户ID创建文章（手动替换 authorId）
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+    "title": "作者的文章",
+    "content": "这是作者写的文章内容",
+    "authorId": 2,
+    "published": true
+}
+
+###
+# 3. 查看该用户的所有文章
+GET {{baseUrl}}/users/2
+
+### ========== 错误测试 ==========
+
+### 创建用户 - 邮箱重复（应该失败）
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "name": "重复邮箱"
+}
+
+### 获取不存在的用户
+GET {{baseUrl}}/users/9999
+
+### 获取不存在的文章
+GET {{baseUrl}}/posts/9999
+
+### 创建文章 - 作者不存在（应该失败）
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+    "title": "无效作者的文章",
+    "content": "这个作者不存在",
+    "authorId": 9999,
+    "published": true
+}
+
+### 更新不存在的用户
+PUT {{baseUrl}}/users/9999
+Content-Type: application/json
+
+{
+    "email": "notfound@example.com",
+    "name": "不存在"
+}
+
+### 删除不存在的文章
+DELETE {{baseUrl}}/posts/9999
+
+
+
+### ========== 控制器测试 ==========
+
+### get user list
+GET {{baseUrl}}/user/index
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAsImVtYWlsIjoidGVzdDNAZXhhbXBsZS5jb20iLCJuYW1lIjoi5rWL6K-V55So5oi3MTIzIiwiaWF0IjoxNzczMTE0NjA2LCJleHAiOjE3NzMyMDEwMDZ9.xz_ROIJjVJ58OAarjQZeUN-J8X7mt_k66tDYuyhjmK4
+### post user
+POST {{baseUrl}}/user/create
+Content-Type: application/json
+
+{
+    "email": "test4@example.com",
+    "name": "测试用户123"
+}

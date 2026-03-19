@@ -1,0 +1,45 @@
+### GET 请求 - query 参数
+GET http://localhost:3000/get?name=张三&age=18
+
+### GET 请求 - 动态参数
+GET http://localhost:3000/get/123
+
+### POST 请求 - JSON body
+POST http://localhost:3000/post
+Content-Type: application/json
+
+{
+    "name": "李四",
+    "age": 20,
+    "email": "lisi@example.com"
+}
+
+### POST 请求 - form-urlencoded
+POST http://localhost:3000/post
+Content-Type: application/x-www-form-urlencoded
+
+name=王五&age=25
+
+
+
+### POST 请求 - 注册
+POST http://localhost:3000/user/register
+Content-Type: application/json
+
+{
+    "username": "trae",
+    "password": "123456"
+}
+
+### POST 请求 - 登录
+POST http://localhost:3000/user/login
+Content-Type: application/json
+
+{
+    "username": "trae",
+    "password": "123456"
+}
+
+### POST 请求 - 获取列表
+POST http://localhost:3000/list/getList
+Content-Type: application/json

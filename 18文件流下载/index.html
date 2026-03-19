@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>视频下载示例</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: radial-gradient(circle at top left, #e0f2fe, #f9fafb);
+                color: #111827;
+            }
+
+            .card {
+                width: 100%;
+                max-width: 420px;
+                padding: 24px 28px;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.9);
+                box-shadow:
+                    0 18px 45px rgba(15, 23, 42, 0.12),
+                    0 0 0 1px rgba(148, 163, 184, 0.18);
+                backdrop-filter: blur(12px);
+            }
+
+            .title {
+                font-size: 20px;
+                font-weight: 650;
+                margin-bottom: 6px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .title-icon {
+                width: 22px;
+                height: 22px;
+                border-radius: 999px;
+                background: linear-gradient(135deg, #3b82f6, #22c55e);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                font-size: 13px;
+                box-shadow: 0 8px 18px rgba(37, 99, 235, 0.4);
+            }
+
+            .subtitle {
+                font-size: 13px;
+                color: #6b7280;
+                margin-bottom: 18px;
+            }
+
+            .file-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 14px;
+                border-radius: 12px;
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                margin-bottom: 18px;
+            }
+
+            .file-meta {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .file-name {
+                font-size: 14px;
+                font-weight: 500;
+                color: #111827;
+            }
+
+            .file-info {
+                font-size: 12px;
+                color: #9ca3af;
+            }
+
+            #btn {
+                appearance: none;
+                border: none;
+                outline: none;
+                padding: 10px 18px;
+                border-radius: 999px;
+                font-size: 14px;
+                font-weight: 500;
+                color: #fff;
+                background: linear-gradient(135deg, #2563eb, #4f46e5);
+                box-shadow:
+                    0 10px 18px rgba(37, 99, 235, 0.45),
+                    0 0 0 1px rgba(59, 130, 246, 0.4);
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition:
+                    transform 0.12s ease-out,
+                    box-shadow 0.12s ease-out,
+                    filter 0.12s ease-out;
+            }
+
+            #btn:hover {
+                transform: translateY(-1px);
+                filter: brightness(1.03);
+                box-shadow:
+                    0 14px 26px rgba(37, 99, 235, 0.5),
+                    0 0 0 1px rgba(59, 130, 246, 0.45);
+            }
+
+            #btn:active {
+                transform: translateY(0);
+                box-shadow:
+                    0 6px 14px rgba(37, 99, 235, 0.4),
+                    0 0 0 1px rgba(59, 130, 246, 0.5);
+            }
+
+            .btn-icon {
+                font-size: 15px;
+            }
+
+            .helper {
+                font-size: 12px;
+                color: #9ca3af;
+                margin-top: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="card">
+            <div class="title">
+                <span class="title-icon">↓</span>
+                <span>文件流下载示例</span>
+            </div>
+            <p class="subtitle">点击下方按钮，从服务端以文件流方式下载 MP4 视频并自动保存到本地。</p>
+
+            <div class="file-row">
+                <div class="file-meta">
+                    <span class="file-name">抖音美女.mp4</span>
+                    <span class="file-info">示例视频 · video/mp4</span>
+                </div>
+                <button id="btn">
+                    <span class="btn-icon">⬇</span>
+                    <span>下载文件</span>
+                </button>
+            </div>
+
+            <p class="helper">确保本地已启动 `localhost:3000` 服务，并支持 `/download` 接口。</p>
+        </main>
+
+        <script>
+            const btn = document.getElementById('btn')
+            btn.onclick = () => {
+                // 点击按钮后，请求后端获取视频二进制流
+                fetch('http://localhost:3000/download', {
+                    method: 'post',
+                    body: JSON.stringify({
+                        // 告诉后端要下载哪个视频文件（在 static 目录下）
+                        fileName: '抖音美女.mp4'
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(res => {
+                        // 如果后端返回 404/500 等，直接提示错误，不再保存错误内容为 mp4
+                        if (!res.ok) {
+                            return res.text().then(text => {
+                                alert('下载失败：' + text)
+                                throw new Error('下载失败：' + text)
+                            })
+                        }
+                        return res.arrayBuffer()
+                    })
+                    .then(res => {
+                        // 把返回的 ArrayBuffer 包装成 mp4 视频 Blob
+                        const blob = new Blob([res], { type: 'video/mp4' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        // 保存到本地时的默认文件名
+                        a.download = '抖音美女.mp4'
+                        a.click()
+                    })
+                    .catch(err => {
+                        console.error(err)
+                    })
+            }
+        </script>
+    </body>
+</html>

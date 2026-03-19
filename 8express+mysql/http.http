@@ -1,0 +1,32 @@
+###  查询全部
+GET http://localhost:3000/ HTTP/1.1
+
+### 单个查询
+GET http://localhost:3000/user/2 HTTP/1.1
+
+### 新增
+POST http://localhost:3000/create HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "byd",
+    "age": 18
+}
+
+### 编辑
+POST http://localhost:3000/update HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 7,
+    "name": "BYD",
+    "age": 22
+}
+
+### 删除
+POST http://localhost:3000/delete HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 5
+}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <p>强缓存</p>
+        <button id="btn">send expires</button>
+        <button id="btn-cache-control">send cache-control</button>
+        <p>协商缓存</p>
+        <button id="btn-last-modified">send last-modified</button>
+        <button id="btn-etag">send etag</button>
+        <script>
+            const btn = document.getElementById('btn')
+            btn.addEventListener('click', () => {
+                fetch('http://localhost:3000/expires')
+            })
+            const btnCacheControl = document.getElementById('btn-cache-control')
+            btnCacheControl.addEventListener('click', () => {
+                fetch('http://localhost:3000/cache-control')
+            })
+            const btnLastModified = document.getElementById('btn-last-modified')
+            btnLastModified.addEventListener('click', () => {
+                fetch('http://localhost:3000/last-modified')
+            })
+            const btnEtag = document.getElementById('btn-etag')
+            btnEtag.addEventListener('click', () => {
+                fetch('http://localhost:3000/etag')
+            })
+        </script>
+    </body>
+</html>
