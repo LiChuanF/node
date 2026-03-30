@@ -1,0 +1,16 @@
+@url =  http://localhost:3000
+
+
+### 测试路由
+
+GET {{url}}/info
+
+### 测试路由2
+GET {{url}}/
+
+
+### 测试路由3
+GET {{url}}/pc/info
+
+### 测试路由4
+GET {{url}}/mobile/info

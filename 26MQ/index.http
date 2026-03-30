@@ -1,0 +1,5 @@
+@host = http://localhost:3000
+
+
+###  发送消息
+GET {{host}}/send?message=hello world

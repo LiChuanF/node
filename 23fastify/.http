@@ -1,0 +1,29 @@
+### 变量定义
+@baseUrl = http://localhost:3000
+
+### 添加
+POST {{baseUrl}}/123
+Content-Type: application/json
+
+### 添加
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+    "password": "123456",
+    "name": "张三"
+}
+
+### 添加
+POST {{baseUrl}}/add
+Content-Type: application/json
+
+{
+    "name": "王五",
+    "hobby": "k哥"
+}
+
+
+### 查询
+GET  {{baseUrl}}/list
+Content-Type: application/json
